@@ -1,0 +1,15 @@
+{
+  "name": "01-js-local-test",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Run 01-edu JavaScript tests locally without cloning 01-edu/public.",
+  "type": "module",
+  "bin": {
+    "01-js-test": "./bin/01-js-test.mjs",
+    "js-test": "./bin/01-js-test.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "UNLICENSED"
+}

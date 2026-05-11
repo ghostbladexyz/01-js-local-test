@@ -1,0 +1,20 @@
+node_modules/
+*.log
+
+# Local environment/config
+.env
+.env.*
+!.env.example
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test/cache output
+coverage/
+.nyc_output/
+.cache/
+tmp/
+temp/
