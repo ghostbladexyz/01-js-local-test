@@ -4,6 +4,12 @@ Run 01-edu JavaScript tests locally without cloning `01-edu/public` and without 
 
 This repo vendors the upstream `js/tests` files and provides a small wrapper around their `test.mjs` runner.
 
+## License
+
+Original wrapper code and documentation are MIT licensed. Vendored files under
+`vendor/01-edu-public/` come from `01-edu/public` and remain under their
+upstream terms. See [THIRD_PARTY.md](THIRD_PARTY.md).
+
 ## Requirements
 
 - Node.js 14 or newer to run student exercise tests.

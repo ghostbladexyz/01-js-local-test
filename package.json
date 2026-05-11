@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "description": "Run 01-edu JavaScript tests locally without cloning 01-edu/public.",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ghostbladexyz/01-js-local-test.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ghostbladexyz/01-js-local-test/issues"
+  },
+  "homepage": "https://github.com/ghostbladexyz/01-js-local-test#readme",
   "type": "module",
   "bin": {
     "01-js-test": "./bin/01-js-test.mjs",
@@ -11,5 +19,5 @@
   "scripts": {
     "test": "node --test test/*.test.mjs"
   },
-  "license": "UNLICENSED"
+  "license": "MIT"
 }
