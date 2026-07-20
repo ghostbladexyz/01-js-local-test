@@ -1,7 +1,7 @@
 # Contributing to 01-js-local-test
 
 Thank you for your interest in contributing to 01-js-local-test. This project
-keeps the wrapper small and dependency-free for regular JavaScript exercises.
+keeps local runs small and dependency-free for regular JavaScript exercises.
 
 ## Getting Started
 
@@ -21,24 +21,24 @@ keeps the wrapper small and dependency-free for regular JavaScript exercises.
 
 ## Development Requirements
 
-- Node.js 14 or newer to run student exercise tests.
-- Node.js 18 or newer to run this repo's own `npm test` suite.
+- Node.js 18 or newer.
 - No package install is required for regular wrapper development.
 
 ## Code Standards
 
 - Keep the CLI dependency-free unless there is a clear reason to change that.
-- Write tests for new behavior in `test/cli.test.mjs`.
+- Write command tests in `test/cli.test.mjs`.
+- Write local compatibility tests in `test/local-compatibility.test.mjs`.
 - Keep changes to `vendor/01-edu-public/js/tests` minimal and documented in
-  README.md.
+  README.md and THIRD_PARTY.md.
 - Do not rewrite vendored upstream files for formatting-only changes.
 
 ## Testing
 
-Run the full test suite:
+Run syntax checks and the full test suite:
 
 ```bash
-npm test
+npm run check
 ```
 
 Run a smoke test from the project root:
@@ -56,15 +56,16 @@ On Windows PowerShell:
 ## Project Structure
 
 - `bin/01-js-test.mjs` - executable Node entrypoint.
-- `src/cli.mjs` - argument normalization and process spawning.
+- `src/cli.mjs` - command execution and process handling.
+- `src/local-compatibility.mjs` - local adaptations kept outside upstream code.
 - `js-test` - Unix/Git Bash launcher.
 - `js-test.cmd` - Windows launcher.
-- `test/cli.test.mjs` - unit and integration tests for the wrapper.
+- `test/` - command, compatibility, and integration tests.
 - `vendor/01-edu-public/js/tests` - vendored upstream 01-edu JS tests.
 
 ## Submitting Changes
 
-1. Ensure `npm test` passes.
+1. Ensure `npm run check` passes.
 2. Use clear commit messages, preferably Conventional Commits:
    - `feat:` for new features
    - `fix:` for bug fixes

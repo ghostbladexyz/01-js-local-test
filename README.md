@@ -1,8 +1,10 @@
 # 01-js-local-test
 
-Run 01-edu JavaScript tests locally without cloning `01-edu/public` and without Docker for normal JS exercises.
+Run 01-edu JavaScript exercise tests locally without cloning `01-edu/public`
+or using Docker for regular exercises.
 
-This repo vendors the upstream `js/tests` files and provides a small wrapper around their `test.mjs` runner.
+The repository vendors the upstream `js/tests` files and provides a
+dependency-free, cross-platform command around their runner.
 
 ## License
 
@@ -12,11 +14,12 @@ upstream terms. See [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Requirements
 
-- Node.js 14 or newer to run student exercise tests.
-- Node.js 18 or newer to run this repo's own `npm test` suite.
-- No `npm install` is needed for regular non-DOM exercises.
+- Node.js 18 or newer.
+- No `npm install` for regular non-DOM exercises.
 
-DOM exercises, such as `skeleton-dom`, still require Puppeteer and Chrome/Chromium. If you need exact DOM parity, use the official Docker image instead.
+DOM exercises, such as `skeleton-dom`, still require Puppeteer and
+Chrome/Chromium. If you need exact DOM parity, use the official Docker image
+instead.
 
 ## Install
 
@@ -27,7 +30,14 @@ cd 01-js-local-test
 
 ## Usage
 
-Pass the exercise name without `.js`; if you include `.js` by mistake, the wrapper strips it.
+The command accepts an exercise name and an optional solution directory or file:
+
+```text
+js-test <exercise> [solution-directory-or-file]
+```
+
+The solution defaults to the current directory. Including `.js` or `.mjs` in
+the exercise name is harmless; the command removes it automatically.
 
 ### PowerShell
 
@@ -37,14 +47,14 @@ From this repo:
 .\js-test.cmd abs C:\path\to\piscine-js
 ```
 
-If your terminal is already inside your piscine JS solutions directory, pass only the exercise name:
+If the terminal is already inside the solution directory, pass only the exercise name:
 
 ```powershell
 cd C:\path\to\piscine-js
 C:\path\to\01-js-local-test\js-test.cmd concat-str
 ```
 
-You can also pass the direct solution file path:
+Direct solution files are also accepted:
 
 ```powershell
 C:\path\to\01-js-local-test\js-test.cmd concat-str C:\path\to\piscine-js\concat-str.js
@@ -60,14 +70,14 @@ From this repo:
 ./js-test abs /c/path/to/piscine-js
 ```
 
-If your terminal is already inside your piscine JS solutions directory, pass only the exercise name:
+Inside the solution directory:
 
 ```sh
 cd /c/path/to/piscine-js
 /c/path/to/01-js-local-test/js-test concat-str
 ```
 
-You can also pass the direct solution file path:
+With a direct solution file:
 
 ```sh
 /c/path/to/01-js-local-test/js-test concat-str /c/path/to/piscine-js/concat-str.js
@@ -94,7 +104,7 @@ piscine-js/
 ./js-test abs ../piscine-js
 ```
 
-For `elementary`, the wrapper keeps the upstream lockdown behavior:
+For `elementary`, the command preserves the upstream string-generation lockdown:
 
 ```powershell
 .\js-test.cmd elementary ..\piscine-js
@@ -120,8 +130,28 @@ Vendored test files come from `01-edu/public` at commit:
 13cd08c1d25db64e79535a51348c332f7dc83b9f
 ```
 
-Local patches:
+Local compatibility changes:
 
-- Puppeteer is lazy-loaded so regular JS tests do not require installing Puppeteer.
-- Dynamic imports convert Windows filesystem paths to `file://` URLs.
+- Puppeteer is loaded only for DOM exercises, so regular exercises remain dependency-free.
+- Windows filesystem paths are converted to `file://` URLs before dynamic imports.
 - Docker-only `/jail/student` paths are mapped to the local solution directory.
+- Generated test modules use isolated temporary directories and are removed
+  after success or failure.
+
+These changes live in `src/local-compatibility.mjs`; the vendored runner
+contains only the small integration points needed to call them. See
+[THIRD_PARTY.md](THIRD_PARTY.md) for provenance and refresh guidance.
+
+## Development
+
+Run the tests:
+
+```sh
+npm test
+```
+
+Run syntax checks and the full test suite:
+
+```sh
+npm run check
+```
