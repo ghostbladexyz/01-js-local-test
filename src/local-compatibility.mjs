@@ -7,6 +7,8 @@ const GENERATED_TEST_PREFIX = '01-js-local-test-'
 
 let puppeteer
 
+export class UserFacingError extends Error {}
+
 /**
  * Converts filesystem paths before dynamic import. POSIX accepts plain absolute
  * paths, but Windows drive letters are parsed as URL schemes by Node's loader.
@@ -17,6 +19,17 @@ export function toImportUrl(value) {
     || value.startsWith('node:')
     ? value
     : pathToFileURL(value).href
+}
+
+/**
+ * Replaces internal module locations with the stable exercise filename users
+ * recognize. The import URL replacement is essential on Windows, where Node's
+ * ESM stack uses file URLs rather than drive-letter filesystem paths.
+ */
+export function formatTestStack(error, modulePath, exercise) {
+  return error.stack
+    .split(toImportUrl(modulePath)).join(`${exercise}.js`)
+    .split(modulePath).join(`${exercise}.js`)
 }
 
 /**
@@ -49,16 +62,12 @@ export async function loadPuppeteer(
     puppeteer = (await importModule('puppeteer')).default
     return puppeteer
   } catch {
-    const error = new Error([
+    throw new UserFacingError([
       'DOM tests require Puppeteer and Chrome/Chromium.',
       'Install puppeteer in this repo, or use the official Docker image:',
       `docker run --rm -e EXERCISE=${exercise} `
         + '-v "$PWD:/jail/student:ro" ghcr.io/01-edu/test-js:latest',
     ].join('\n'))
-
-    // The vendored runner prints user-facing failures without an internal stack.
-    error.isUserFacing = true
-    throw error
   }
 }
 

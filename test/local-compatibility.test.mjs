@@ -4,9 +4,11 @@ import { dirname, resolve } from 'node:path'
 import { test } from 'node:test'
 
 import {
+  formatTestStack,
   loadPuppeteer,
   mapDockerSolutionPath,
   toImportUrl,
+  UserFacingError,
   withGeneratedTestModule,
 } from '../src/local-compatibility.mjs'
 
@@ -30,6 +32,18 @@ test('converts filesystem paths to importable file URLs', () => {
   assert.equal(toImportUrl('node:path'), 'node:path')
 })
 
+test('hides Windows generated-module URLs in failure stacks', () => {
+  const generatedPath = 'C:\\Temp\\01-js-local-test-random\\generated-test.mjs'
+  const error = new Error('exercise failed')
+  error.stack = `Error: exercise failed\n    at ${toImportUrl(generatedPath)}:4:2`
+
+  const stack = formatTestStack(error, generatedPath, 'concat-str')
+
+  assert.match(stack, /at concat-str\.js:4:2/)
+  assert.ok(!stack.includes('01-js-local-test-random'))
+  assert.ok(!stack.includes('generated-test.mjs'))
+})
+
 test('maps single- and double-quoted Docker solution paths', () => {
   const code = [
     "readFile('/jail/student/how-2-js.js')",
@@ -49,6 +63,7 @@ test('explains the optional browser dependency when Puppeteer is absent', async 
       throw new Error('not installed')
     }),
     error => {
+      assert.ok(error instanceof UserFacingError)
       assert.match(error.message, /DOM tests require Puppeteer/)
       assert.match(error.message, /EXERCISE=skeleton-dom/)
       assert.match(error.message, /official Docker image/)

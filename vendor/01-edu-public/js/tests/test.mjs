@@ -4,9 +4,11 @@ import { deepStrictEqual } from 'assert'
 import { fileURLToPath } from 'url'
 import http from 'http'
 import {
+  formatTestStack,
   loadPuppeteer,
   mapDockerSolutionPath,
   toImportUrl,
+  UserFacingError,
   withGeneratedTestModule,
 } from '../../../../src/local-compatibility.mjs'
 
@@ -53,9 +55,7 @@ const [solutionPath, name] = process.argv.slice(2)
 
 const tools = { eq, fail, wait, randStr, between, upperFirst }
 const fatal = (...args) => {
-  const error = new Error(args.map(String).join(' '))
-  error.isUserFacing = true
-  throw error
+  throw new UserFacingError(args.map(String).join(' '))
 }
 
 const ifNoEnt = fn => err => {
@@ -75,7 +75,7 @@ const readTest = filename => readFile(filename, 'utf8')
 
 const stackFmt = (err, url) => {
   for (const p of props) { p.src[p.key] = p.value }
-  if (err instanceof Error) return err.stack.split(url).join(`${name}.js`)
+  if (err instanceof Error) return formatTestStack(err, url, name)
   throw Error(`Unexpected type thrown: ${typeof err}. usage: throw Error('my message')`)  
 }
 
@@ -311,7 +311,7 @@ const main = async () => {
 main().then(
   () => process.exit(0),
   err => {
-    console.error(err?.isUserFacing ? err.message : err?.stack || Error('').stack)
+    console.error(err instanceof UserFacingError ? err.message : err?.stack || Error('').stack)
     process.exit(1)
   },
 )
