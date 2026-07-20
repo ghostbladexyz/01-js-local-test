@@ -1,25 +1,16 @@
 import { join as joinPath, dirname, extname } from 'path'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import { deepStrictEqual } from 'assert'
-import { fileURLToPath, pathToFileURL } from 'url'
-import { tmpdir } from 'os'
+import { fileURLToPath } from 'url'
 import http from 'http'
-
-let puppeteer
-
-const loadPuppeteer = async () => {
-  if (puppeteer) return puppeteer
-  try {
-    puppeteer = (await import('puppeteer')).default
-    return puppeteer
-  } catch {
-    fatal([
-      'DOM tests require Puppeteer and Chrome/Chromium.',
-      'Install puppeteer in this repo, or use the official Docker image:',
-      'docker run --rm -e EXERCISE=' + name + ' -v "$PWD:/jail/student:ro" ghcr.io/01-edu/test-js:latest',
-    ].join('\n'))
-  }
-}
+import {
+  formatTestStack,
+  loadPuppeteer,
+  mapDockerSolutionPath,
+  toImportUrl,
+  UserFacingError,
+  withGeneratedTestModule,
+} from '../../../../src/local-compatibility.mjs'
 
 global.window = global
 global._fetch = fetch
@@ -64,12 +55,8 @@ const [solutionPath, name] = process.argv.slice(2)
 
 const tools = { eq, fail, wait, randStr, between, upperFirst }
 const fatal = (...args) => {
-  console.error(...args)
-  process.exit(1)
+  throw new UserFacingError(args.map(String).join(' '))
 }
-
-solutionPath || fatal('missing solution-path, usage:\nnode test solution-path exercise-name')
-name || fatal('missing exercise, usage:\nnode test solution-path exercise-name')
 
 const ifNoEnt = fn => err => {
   if (err.code !== 'ENOENT') throw err
@@ -77,10 +64,6 @@ const ifNoEnt = fn => err => {
 }
 
 const root = dirname(fileURLToPath(import.meta.url))
-const toImportUrl = value =>
-  value.startsWith('file:') || value.startsWith('data:') || value.startsWith('node:')
-    ? value
-    : pathToFileURL(value).href
 const read = (filename, description) =>
   readFile(filename, 'utf8').catch(
     ifNoEnt(() => fatal(`Missing ${description} for ${name}`)),
@@ -90,14 +73,9 @@ const modes = { '.js': 'function', '.mjs': 'node', '.json': 'inline' }
 const readTest = filename => readFile(filename, 'utf8')
   .then(test => ({ test, mode: modes[extname(filename)] }))
 
-const localStudentPath = () => solutionPath.split('\\').join('/').split("'").join("\\'")
-const mapDockerStudentPath = code => code
-  .split("'/jail/student").join(`'${localStudentPath()}`)
-  .split('"/jail/student').join(`"${localStudentPath()}`)
-
 const stackFmt = (err, url) => {
   for (const p of props) { p.src[p.key] = p.value }
-  if (err instanceof Error) return err.stack.split(url).join(`${name}.js`)
+  if (err instanceof Error) return formatTestStack(err, url, name)
   throw Error(`Unexpected type thrown: ${typeof err}. usage: throw Error('my message')`)  
 }
 
@@ -263,7 +241,7 @@ const prepareForDOM = ({ code }, server) => new Promise((s, f) => (server = http
   .listen(PORT, async listenErr => {
     if (listenErr) return f(listenErr)
     try {
-      const browser = await (await loadPuppeteer()).launch(config)
+      const browser = await (await loadPuppeteer(name)).launch(config)
       const [page] = await browser.pages()
       await page.goto(`http://localhost:${PORT}/index.html`)
       deepStrictEqual.$ = async (selector, props) => {
@@ -305,6 +283,9 @@ const prepareForDOM = ({ code }, server) => new Promise((s, f) => (server = http
   }))
 
 const main = async () => {
+  solutionPath || fatal('missing solution-path, usage:\nnode test solution-path exercise-name')
+  name || fatal('missing exercise, usage:\nnode test solution-path exercise-name')
+
   const { test, mode } = await any([
     readTest(joinPath(root, `${name}.json`)),
     readTest(joinPath(root, `${name}_test.js`)),
@@ -317,16 +298,20 @@ const main = async () => {
   const { rawCode, code, path } = await loadAndSanitizeSolution()
   const parts = test.split("// /*/ // ⚡")
   const [inject, testCode] = parts.length < 2 ? ["", test] : parts
-  const combined = mapDockerStudentPath(`${inject.trim()}\n${rawCode
+  const combined = mapDockerSolutionPath(`${inject.trim()}\n${rawCode
     .replace(inject.trim(), "")
-    .trim()}\n;${testCode.trim()}\n`)
+    .trim()}\n;${testCode.trim()}\n`, solutionPath)
 
-  const url = `${tmpdir()}/${name}.mjs`
-  await writeFile(url, combined)
-  return runTests({ path, code, url })
+  return withGeneratedTestModule(
+    combined,
+    url => runTests({ path, code, url }),
+  )
 }
 
 main().then(
   () => process.exit(0),
-  err => fatal(err?.stack || Error('').stack),
+  err => {
+    console.error(err instanceof UserFacingError ? err.message : err?.stack || Error('').stack)
+    process.exit(1)
+  },
 )
