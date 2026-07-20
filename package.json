@@ -12,12 +12,16 @@
   },
   "homepage": "https://github.com/ghostbladexyz/01-js-local-test#readme",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "01-js-test": "./bin/01-js-test.mjs",
     "js-test": "./bin/01-js-test.mjs"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "check": "node --check src/cli.mjs && node --check src/local-compatibility.mjs && node --check bin/01-js-test.mjs && node --check vendor/01-edu-public/js/tests/test.mjs && npm test",
+    "test": "node --test test/cli.test.mjs test/local-compatibility.test.mjs"
   },
   "license": "MIT"
 }
